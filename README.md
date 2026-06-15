@@ -20,6 +20,52 @@ Check the command is available:
 ```bash
 hpc-client --help
 ```
+### Allow Insecure Docker Registry Access
+
+The CARES Docker registry is served over HTTP rather than HTTPS.
+
+Each machine that needs to push or pull images must explicitly allow the registry as an insecure registry.
+
+Edit Docker daemon configuration:
+
+```bash
+sudo nano /etc/docker/daemon.json
+```
+
+You should already see the Nvidia runtime configured - add the insecure registry configuration:
+
+```json
+{
+  "default-runtime": "nvidia",
+  "runtimes": {
+    "nvidia": {
+      "path": "nvidia-container-runtime",
+      "runtimeArgs": []
+    }
+  },
+  "insecure-registries": [
+    "130.216.238.2:5500"
+  ]
+}
+```
+
+Restart Docker:
+
+```bash
+sudo systemctl restart docker
+```
+
+Verify Docker sees the insecure registry configuration:
+
+```bash
+docker info | grep -A5 "Insecure Registries"
+```
+
+Expected output should include:
+
+```text
+130.216.238.2:5500
+```
 
 ## Configure
 
