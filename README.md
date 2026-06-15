@@ -125,6 +125,235 @@ Fields:
 | `required_datasets` | Dataset names required by the job |
 | `required_worker_ids` | Optional worker restriction; usually leave empty |
 
+## Building and Publishing Docker Images
+
+Jobs are executed using Docker images.
+
+Students build their application into a Docker image, push the image to the CARES registry, and then reference that image in their `job.json`.
+
+---
+
+### Example Project
+
+```text
+my_project/
+├── Dockerfile
+├── requirements.txt
+├── train.py
+└── job.json
+```
+
+---
+
+### Example Dockerfile
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /workspace
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD ["python", "train.py"]
+```
+
+---
+
+### Example Training Script
+
+```python
+from pathlib import Path
+
+output_dir = Path("/workspace/output")
+output_dir.mkdir(parents=True, exist_ok=True)
+
+with open(output_dir / "results.txt", "w") as f:
+    f.write("Training complete\n")
+
+print("Done")
+```
+
+Anything written to:
+
+```text
+/workspace/output
+```
+
+will automatically be copied back to the scheduler output directory.
+
+---
+
+### Build the Image
+
+From the project directory:
+
+```bash
+docker build -t my-training-image:latest .
+```
+
+Verify:
+
+```bash
+docker images
+```
+
+---
+
+### Tag for the CARES Registry
+
+Assuming the registry is:
+
+```text
+130.216.238.2:5500
+```
+
+tag the image:
+
+```bash
+docker tag \
+    my-training-image:latest \
+    130.216.238.2:5500/my-training-image:latest
+```
+
+---
+
+### Push to the Registry
+
+```bash
+docker push \
+    130.216.238.2:5500/my-training-image:latest
+```
+
+Verify the push completed successfully.
+
+---
+
+### Reference the Image in job.json
+
+```json
+{
+  "job_name": "training_run",
+  "image": "130.216.238.2:5500/my-training-image:latest",
+  "max_runtime_hours": 4.0,
+  "command": null,
+  "required_datasets": [],
+  "required_worker_ids": []
+}
+```
+
+Submit:
+
+```bash
+hpc-client submit job.json
+```
+
+---
+
+### Overriding the Docker Command
+
+If the Docker image contains multiple entry points, you can override the command at submission time.
+
+Example:
+
+```json
+{
+  "job_name": "seed_1",
+  "image": "130.216.238.2:5500/my-training-image:latest",
+  "max_runtime_hours": 4.0,
+  "command": "python train.py --seed 1",
+  "required_datasets": [],
+  "required_worker_ids": []
+}
+```
+
+The scheduler will execute:
+
+```bash
+python train.py --seed 1
+```
+
+inside the container instead of the Dockerfile `CMD`.
+
+---
+
+### Datasets
+
+Datasets requested in:
+
+```json
+{
+  "required_datasets": [
+    "imagenet"
+  ]
+}
+```
+
+are mounted inside the container at:
+
+```text
+/workspace/datasets/imagenet
+```
+
+Datasets are mounted read-only.
+
+Do not modify dataset contents.
+
+---
+
+### Output Files
+
+Job outputs should be written to:
+
+```text
+/workspace/output
+```
+
+Examples:
+
+```python
+"/workspace/output/results.csv"
+"/workspace/output/checkpoint.pt"
+"/workspace/output/model.pth"
+"/workspace/output/log.txt"
+```
+
+Files written here are automatically copied to the scheduler output directory when the job completes.
+
+---
+
+### Important: Containers Are Temporary
+
+Docker containers are not persistent.
+
+Anything written outside:
+
+```text
+/workspace/output
+```
+
+will be lost when the job finishes.
+
+For example:
+
+```text
+/workspace/output/model.pt      ✅ Saved
+/workspace/output/results.csv   ✅ Saved
+
+/tmp/model.pt                   ❌ Lost
+/workspace/model.pt             ❌ Lost
+```
+
+Always save checkpoints, models, logs, and results into:
+
+```text
+/workspace/output
+```
+
+Your code needs to handle passing data to the output directory and ensuring important files are saved there. No output written outside this directory will be preserved after the job finishes.
+
 ## Submit a job
 
 ```bash
