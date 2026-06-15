@@ -57,7 +57,7 @@ class HPCClient:
         )
 
         if response.status_code == 401:
-            raise HPCAuthenticationError("Not logged in. Run: hpc login")
+            raise HPCAuthenticationError("Not logged in. Run: hpc-client login")
 
         try:
             data = response.json()
