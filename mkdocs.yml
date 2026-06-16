@@ -18,6 +18,7 @@ nav:
   - Docker Images: docker.md
   - Datasets: datasets.md
   - Outputs: outputs.md
+  - Python API: python_api.md
 
 markdown_extensions:
   - admonition
