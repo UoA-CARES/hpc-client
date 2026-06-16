@@ -192,6 +192,13 @@ docker pull \
     130.216.238.2:5500/count-to-60:latest
 ```
 
+!!! warning "Trust Docker Registry"
+    See [Docker Registry Configuration](docker.md#docker-registry-configuration) for instructions on how to add the HPC Docker registry to your trusted registry list.
+
+    This only needs to be configured once per machine.
+
+    After the registry has been added to Docker's trusted registry list, images can be pushed and pulled normally.
+
 ## Step 5: Upload a Dataset
 
 Datasets are stored on the shared CARES NAS.
