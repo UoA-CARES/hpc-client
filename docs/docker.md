@@ -600,6 +600,83 @@ The CARES HPC Registry is recommended for:
 * Images not published on Docker Hub
 * Unlimited storage of Docker images
 
+#### Trusting the CARES Docker Registry
+
+The CARES registry is hosted locally and may be configured as an insecure registry.
+
+Docker must be configured to trust the registry before images can be pushed or pulled.
+
+Registry:
+
+```text
+130.216.238.2:5500
+```
+
+**Linux**
+
+Edit:
+
+```text
+/etc/docker/daemon.json
+```
+
+Example:
+
+```json
+{
+  "insecure-registries": [
+    "130.216.238.2:5500"
+  ]
+}
+```
+
+Restart Docker:
+
+```bash
+sudo systemctl restart docker
+```
+
+Verify:
+
+```bash
+docker pull 130.216.238.2:5500/test-image:latest
+```
+
+**Docker Desktop**
+
+Open:
+
+```text
+Settings
+→ Docker Engine
+```
+
+Add:
+
+```json
+{
+  "insecure-registries": [
+    "130.216.238.2:5500"
+  ]
+}
+```
+
+Apply and restart Docker.
+
+##### Verify Configuration
+
+The following command should no longer produce certificate or trust errors:
+
+```bash
+docker pull 130.216.238.2:5500/count-to-60:latest
+```
+
+!!! warning "One-Time Configuration"
+
+    This only needs to be configured once per machine.
+
+    After the registry has been added to Docker's trusted registry list, images can be pushed and pulled normally.
+
 #### Pushing an HPC Registry Image
 
 Tag the image for the registry:
