@@ -56,3 +56,27 @@ Datasets requested in `job.json` are mounted read-only at:
 ```bash
 /workspace/datasets/<dataset_name>
 ```
+
+## Outputs
+Outputs are files you want to keep after a job finishes, such as:
+
+- Model checkpoints
+- Training logs
+- CSV files
+- Figures
+- Reports
+- Videos
+
+Must be saved to:
+
+```text
+/workspace/output
+```
+
+inside of the Docker container.
+
+The scheduler will then transfer those files back to the NAS and make them available under:
+
+```text
+/cares-nas/hpc/outputs/<upi>/<job_id>
+```

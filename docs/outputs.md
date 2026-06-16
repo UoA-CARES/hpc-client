@@ -61,7 +61,7 @@ output_dir.mkdir(parents=True, exist_ok=True)
 
     If files are written somewhere else, they will be lost when the container is removed.
 
-## What Gets Saved
+### What Gets Saved
 
 Files written inside:
 
@@ -83,7 +83,7 @@ Example:
 
 These files will be available after the job completes.
 
-## What Does Not Get Saved
+### What Does Not Get Saved
 
 Files written elsewhere inside the container are temporary.
 
@@ -111,7 +111,7 @@ Always save important files into:
 /workspace/output
 ```
 
-## Recommended Output Structure
+### Recommended Output Structure
 
 For larger projects, organise outputs into folders.
 
@@ -158,7 +158,11 @@ output_dir = Path("/workspace/output")
 
     If you want to save files into subdirectories, your code needs to create those directories first.
 
-## Accessing Outputs
+## Accessing Job Outputs from the NAS
+
+Job outputs are stored on the CARES NAS and can be accessed directly from your computer.
+
+Mounting the NAS locally is often more convenient than downloading files through a web browser, especially for large datasets, model checkpoints, videos, and experiment results.
 
 After a job completes, outputs are available from the shared HPC storage under:
 
@@ -190,7 +194,130 @@ will appear in the final job outputs exactly as written.
 
     You cannot access outputs from other users' jobs.
 
-## Outputs vs Logs
+---
+
+### Mounting the Output Directory (Linux)
+
+Create a local mount point:
+
+```bash
+mkdir -p ~/hpc_outputs
+```
+
+Mount the NAS:
+
+```bash
+sudo mount -t cifs \
+    //130.216.238.2/outputs/<upi> \
+    ~/hpc_outputs \
+    -o username=<upi>
+```
+
+Example:
+
+```bash
+sudo mount -t cifs \
+    //130.216.238.2/outputs \
+    ~/hpc_outputs/jsmith123 \
+    -o username=jsmith123
+```
+
+You will be prompted for your NAS password.
+
+---
+
+### Accessing Your Outputs
+
+After mounting:
+
+```bash
+cd ~/hpc_outputs
+```
+
+Browse your output directory:
+
+```bash
+cd jsmith123
+```
+
+Example:
+
+```text
+~/hpc_outputs/jsmith123/
+├── job_001/
+├── job_002/
+├── job_003/
+└── ...
+```
+
+---
+
+### Copying Results
+
+Copy a job locally:
+
+```bash
+cp -r \
+    ~/hpc_outputs/jsmith123/job_001 \
+    ~/Downloads/
+```
+
+Copy an individual file:
+
+```bash
+cp \
+    ~/hpc_outputs/jsmith123/job_001/results.csv \
+    .
+```
+
+---
+
+### Unmounting
+
+When finished:
+
+```bash
+sudo umount ~/hpc_outputs
+```
+
+---
+
+### Using rsync
+
+For large results it is often more efficient to use `rsync`.
+
+Example:
+
+```bash
+rsync -avP \
+    ~/hpc_outputs/jsmith123/job_001/ \
+    ./job_001/
+```
+
+This allows interrupted transfers to resume.
+
+---
+
+### Recommended Workflow
+
+```text
+Run Job
+    ↓
+Monitor Job
+    ↓
+Job Completes
+    ↓
+Mount NAS
+    ↓
+Copy Results Locally
+    ↓
+Analyse Results
+```
+
+For large machine learning experiments, model checkpoints, videos, and datasets, mounting the NAS is generally the easiest way to access your results.
+
+
+### Outputs vs Logs
 
 Outputs and logs serve different purposes.
 
@@ -218,7 +345,7 @@ torch.save(
 
 creates a saved output file.
 
-## Viewing Logs
+### Viewing Logs
 
 Logs can be viewed using:
 
@@ -228,7 +355,7 @@ hpc-client logs <job_id>
 
 Use logs to monitor progress while a job is running.
 
-## Large Outputs
+### Large Outputs
 
 Large outputs are supported, however users should:
 
