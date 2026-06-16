@@ -55,7 +55,7 @@ Configure the scheduler URL:
 
 ```bash
 hpc-client configure \
-    --scheduler-url http://scheduler.example.nz:8080
+    --scheduler-url http://<SCHEDULER_IP>:8080
 ```
 
 Verify:
@@ -67,8 +67,12 @@ hpc-client config
 Example output:
 
 ```text
-Scheduler URL: http://scheduler.example.nz:8080
+Scheduler URL: http://<SCHEDULER_IP>:8080
 ```
+
+!!! tip "Scheduler URL"
+
+    The scheduler IP is provided by the HPC administrators.
 
 ## Login
 
