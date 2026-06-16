@@ -1,0 +1,30 @@
+site_name: HPC Client
+site_description: Student and researcher guide for submitting jobs to the HPC Scheduler
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Usage: usage.md
+  - Jobs: jobs.md
+  - Docker Images: docker.md
+  - Datasets: datasets.md
+  - Outputs: outputs.md
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - tables

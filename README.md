@@ -1,112 +1,91 @@
 # HPC Client
 
-Student command-line and Python client for submitting jobs to the HPC Scheduler.
+[![Documentation](https://img.shields.io/badge/docs-mkdocs-blue)](https://uoa-cares.github.io/hpc-client/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 
-This package lets you submit jobs, check their status, view logs, wait for completion, and cancel jobs without needing access to the scheduler source code or scheduler machine.
+Command-line client for submitting Docker jobs to the CARES HPC Scheduler.
 
-## Install
+The HPC Client lets students and researchers:
 
-From the `hpc-client` repository:
+- Log in to the scheduler
+- Submit jobs
+- List jobs
+- Wait for jobs to finish
+- View logs
+- Cancel jobs
+
+## Training Cluster, not a Dvelopment Environment
+The CARES HPC cluster is designed for running complete workloads, not for interactive software development.
+
+Before submitting a job you should:
+
+- Develop and test your code locally
+- Build a Docker image containing all required code and dependencies
+- Verify the Docker image runs correctly on your own machine
+- Upload any required datasets to the CARES NAS
+- Submit the job to the scheduler
+
+Jobs should be self-contained and executable without manual intervention.
+
+## Account Required
+
+You cannot create your own account through the client.
+
+Contact the HPC administrators on the UoA-CARES slack and request an account before using the HPC Client.
+
+Provide:
+
+- Your UPI
+- Your University of Auckland email address
+- Your name
+- Your supervisor name
+- A short description of the work you want to run
+
+## Full Documentation
+
+The full documentation is available at [https://uoa-cares.github.io/hpc-client/](https://uoa-cares.github.io/hpc-client/).
+
+The documentation includes:
+- Installation instructions
+- Job Configuration
+- Docker Image Management
+- Dataset Management
+- Output Management
+- Troubleshooting tips
+
+## Installation
 
 ```bash
+git clone git@github.com:UoA-CARES/hpc-client.git
+cd hpc-client
+
 python -m venv .venv
 source .venv/bin/activate
 
 pip install -e .
 ```
 
-Check the command is available:
+## Configure Scheduler
 
 ```bash
-hpc-client --help
+hpc-client configure \
+    --scheduler-url http://<scheduler-host>:8080
 ```
-### Allow Insecure Docker Registry Access
-
-The CARES Docker registry is served over HTTP rather than HTTPS.
-
-Each machine that needs to push or pull images must explicitly allow the registry as an insecure registry.
-
-Edit Docker daemon configuration:
-
-```bash
-sudo nano /etc/docker/daemon.json
-```
-
-You should already see the Nvidia runtime configured - add the insecure registry configuration:
-
-```json
-{
-  "default-runtime": "nvidia",
-  "runtimes": {
-    "nvidia": {
-      "path": "nvidia-container-runtime",
-      "runtimeArgs": []
-    }
-  },
-  "insecure-registries": [
-    "130.216.238.2:5500"
-  ]
-}
-```
-
-Restart Docker:
-
-```bash
-sudo systemctl restart docker
-```
-
-Verify Docker sees the insecure registry configuration:
-
-```bash
-docker info | grep -A5 "Insecure Registries"
-```
-
-Expected output should include:
-
-```text
-130.216.238.2:5500
-```
-
-## Configure
-
-Point the client at the scheduler:
-
-```bash
-hpc-client configure --scheduler-url http://localhost:8080
-```
-
-For the real scheduler, use the URL provided by the HPC admin.
 
 ## Login
 
-Use your UPI and password:
-
 ```bash
-hpc-client login <your-upi>
+hpc-client login <username>
 ```
 
-Example:
+## Create a Job
 
-```bash
-hpc-client login test123
-```
-
-Check your login:
-
-```bash
-hpc-client whoami
-```
-
-## Job file
-
-Jobs are submitted as JSON files.
-
-Example `job.json`:
+Create `job.json`:
 
 ```json
 {
-  "job_name": "long_dataset_test",
-  "image": "130.216.238.2:5500/hpc-test:latest",
+  "job_name": "count_to_60",
+  "image": "130.216.238.2:5500/count-to-60:latest",
   "max_runtime_hours": 1.0,
   "command": null,
   "required_datasets": [],
@@ -114,55 +93,75 @@ Example `job.json`:
 }
 ```
 
-Fields:
+## Submit a Job
 
-| Field | Description |
-|---|---|
-| `job_name` | Human-readable job name |
-| `image` | Docker image to run |
-| `max_runtime_hours` | Maximum allowed runtime |
-| `command` | Optional command override, or `null` to use the image default |
-| `required_datasets` | Dataset names required by the job |
-| `required_worker_ids` | Optional worker restriction; usually leave empty |
+```bash
+hpc-client submit job.json
+```
 
-## Building and Publishing Docker Images
-
-Jobs are executed using Docker images.
-
-Students build their application into a Docker image, push the image to the CARES registry, and then reference that image in their `job.json`.
-
----
-
-### Example Project
+Example output:
 
 ```text
-my_project/
-├── Dockerfile
-├── requirements.txt
-├── train.py
-└── job.json
+count_to_60_260616120000_abcd
 ```
 
----
+## Monitor Jobs
 
-### Example Dockerfile
+List jobs:
 
-```dockerfile
-FROM python:3.11-slim
-
-WORKDIR /workspace
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-CMD ["python", "train.py"]
+```bash
+hpc-client jobs
 ```
 
----
+Wait for completion:
 
-### Example Training Script
+```bash
+hpc-client wait <job_id>
+```
+
+View logs:
+
+```bash
+hpc-client logs <job_id>
+```
+
+Cancel a job:
+
+```bash
+hpc-client cancel <job_id>
+```
+
+## Datasets
+
+Datasets are stored on the CARES NAS.
+
+Reference datasets by name:
+
+```json
+{
+  "required_datasets": [
+    "project_xyz"
+  ]
+}
+```
+
+Inside the container:
+
+```text
+/workspace/datasets/project_xyz
+```
+
+## Outputs
+
+Save outputs to:
+
+```text
+/workspace/output
+```
+
+Anything written to this directory is preserved after the job completes.
+
+Example:
 
 ```python
 from pathlib import Path
@@ -170,362 +169,118 @@ from pathlib import Path
 output_dir = Path("/workspace/output")
 output_dir.mkdir(parents=True, exist_ok=True)
 
-with open(output_dir / "results.txt", "w") as f:
-    f.write("Training complete\n")
-
-print("Done")
+(output_dir / "results.txt").write_text(
+    "Training complete\n",
+    encoding="utf-8",
+)
 ```
 
-Anything written to:
-
-```text
-/workspace/output
-```
-
-will automatically be copied back to the scheduler output directory.
-
----
-
-### Build the Image
-
-From the project directory:
+## Typical Workflow
 
 ```bash
-docker build -t my-training-image:latest .
-```
+hpc-client login <username>
 
-Verify:
-
-```bash
-docker images
-```
-
----
-
-### Tag for the CARES Registry
-
-Assuming the registry is:
-
-```text
-130.216.238.2:5500
-```
-
-tag the image:
-
-```bash
-docker tag \
-    my-training-image:latest \
-    130.216.238.2:5500/my-training-image:latest
-```
-
----
-
-### Push to the Registry
-
-```bash
-docker push \
-    130.216.238.2:5500/my-training-image:latest
-```
-
-Verify the push completed successfully.
-
----
-
-### Reference the Image in job.json
-
-```json
-{
-  "job_name": "training_run",
-  "image": "130.216.238.2:5500/my-training-image:latest",
-  "max_runtime_hours": 4.0,
-  "command": null,
-  "required_datasets": [],
-  "required_worker_ids": []
-}
-```
-
-Submit:
-
-```bash
 hpc-client submit job.json
+
+hpc-client jobs
+
+hpc-client logs <job_id>
+
+hpc-client wait <job_id>
 ```
 
----
+## Submitting Jobs from Python
 
-### Overriding the Docker Command
+The HPC Client can be used directly from Python scripts.
 
-If the Docker image contains multiple entry points, you can override the command at submission time.
+This is useful when:
+
+- Launching multiple experiments
+- Hyperparameter sweeps
+- Reinforcement learning benchmark runs
+- Automated evaluation pipelines
 
 Example:
 
-```json
-{
-  "job_name": "seed_1",
-  "image": "130.216.238.2:5500/my-training-image:latest",
-  "max_runtime_hours": 4.0,
-  "command": "python train.py --seed 1",
-  "required_datasets": [],
-  "required_worker_ids": []
-}
-```
-
-The scheduler will execute:
-
-```bash
-python train.py --seed 1
-```
-
-inside the container instead of the Dockerfile `CMD`.
-
----
-
-### Datasets
-
-Datasets requested in:
-
-```json
-{
-  "required_datasets": [
-    "imagenet"
-  ]
-}
-```
-
-are mounted inside the container at:
-
-```text
-/workspace/datasets/imagenet
-```
-
-Datasets are mounted read-only.
-
-Do not modify dataset contents.
-
----
-
-### Output Files
-
-Job outputs should be written to:
-
-```text
-/workspace/output
-```
-
-Examples:
-
 ```python
-"/workspace/output/results.csv"
-"/workspace/output/checkpoint.pt"
-"/workspace/output/model.pth"
-"/workspace/output/log.txt"
+from hpc_client import HPCClient
+
+client = HPCClient(
+    scheduler_url="http://scheduler.example.nz:8080"
+)
+
+client.login(
+    username="abc123",
+    password="your_password",
+)
+
+job_id = client.submit_job(
+    {
+        "job_name": "experiment_001",
+        "image": "130.216.238.2:5500/my-project:latest",
+        "max_runtime_hours": 4.0,
+        "command": "python train.py --seed 1",
+        "required_datasets": ["project_xyz"],
+        "required_worker_ids": [],
+    }
+)
+
+print(f"Submitted: {job_id}")
 ```
 
-Files written here are automatically copied to the scheduler output directory when the job completes.
-
----
-
-### Important: Containers Are Temporary
-
-Docker containers are not persistent.
-
-Anything written outside:
-
-```text
-/workspace/output
-```
-
-will be lost when the job finishes.
-
-For example:
-
-```text
-/workspace/output/model.pt      ✅ Saved
-/workspace/output/results.csv   ✅ Saved
-
-/tmp/model.pt                   ❌ Lost
-/workspace/model.pt             ❌ Lost
-```
-
-Always save checkpoints, models, logs, and results into:
-
-```text
-/workspace/output
-```
-
-Your code needs to handle passing data to the output directory and ensuring important files are saved there. No output written outside this directory will be preserved after the job finishes.
-
-## Submit a job
-
-```bash
-hpc-client submit job.json
-```
-
-The output includes a `job_id`. Save this for logs/status/cancel operations.
-
-## List jobs
-
-```bash
-hpc-client jobs
-```
-
-For raw JSON:
-
-```bash
-hpc-client jobs --json
-```
-
-## Show one job
-
-```bash
-hpc-client job <job_id>
-```
-
-## Wait for a job to finish
-
-```bash
-hpc-client wait <job_id>
-```
-
-Custom polling interval:
-
-```bash
-hpc-client wait <job_id> --poll-seconds 5
-```
-
-## View logs
-
-```bash
-hpc-client logs <job_id>
-```
-
-For raw JSON:
-
-```bash
-hpc-client logs <job_id> --json
-```
-
-## Cancel a job
-
-```bash
-hpc-client cancel <job_id>
-```
-
-## Typical workflow
-
-```bash
-hpc-client configure --scheduler-url http://localhost:8080
-hpc-client login <your-upi>
-
-hpc-client submit job.json
-hpc-client jobs
-hpc-client wait <job_id>
-hpc-client logs <job_id>
-```
-
-## Python usage
-
-You can also submit jobs from Python scripts.
+### Launch Multiple Jobs
 
 ```python
 from hpc_client import HPCClient
 
-client = HPCClient.from_config()
+client = HPCClient(
+    scheduler_url="http://scheduler.example.nz:8080"
+)
 
-result = client.submit("job.json")
-job_id = result["job_id"]
+client.login(
+    username="abc123",
+    password="your_password",
+)
 
-print("Submitted:", job_id)
-
-finished = client.wait(job_id, poll_seconds=5)
-print(finished)
-
-logs = client.logs(job_id)
-print(logs.get("container_log"))
-```
-
-Example parameter sweep:
-
-```python
-from hpc_client import HPCClient
-
-client = HPCClient.from_config()
-
-image = "130.216.238.2:5500/my-training-image:latest"
-
-for seed in range(5):
-    result = client.submit(
+for seed in range(10):
+    job_id = client.submit_job(
         {
-            "job_name": f"training_seed_{seed}",
-            "image": image,
+            "job_name": f"ppo_seed_{seed}",
+            "image": "130.216.238.2:5500/ppo:latest",
+            "max_runtime_hours": 12.0,
             "command": f"python train.py --seed {seed}",
-            "max_runtime_hours": 4.0,
-            "required_datasets": [],
+            "required_datasets": ["project_xyz"],
             "required_worker_ids": [],
         }
     )
 
-    print("Submitted:", result["job_id"])
+    print(f"Submitted {job_id}")
 ```
 
-## Configuration location
+### Monitoring Jobs
 
-The client stores configuration locally at:
+```python
+jobs = client.list_jobs()
 
-```text
-~/.hpc/config.json
+for job in jobs:
+    print(
+        job["job_id"],
+        job["status"],
+    )
 ```
 
-This stores the scheduler URL and login session cookie.
+### Waiting for Completion
 
-If login stops working, run:
-
-```bash
-hpc-client login <your-upi>
+```python
+client.wait_for_job(job_id)
 ```
 
-again.
+### Retrieving Logs
 
-## Troubleshooting
+```python
+logs = client.get_logs(job_id)
 
-### `Not logged in`
-
-Run:
-
-```bash
-hpc-client login <your-upi>
+print(logs)
 ```
 
-### `Could not connect`
-
-Check that the scheduler URL is correct:
-
-```bash
-hpc-client configure --scheduler-url <scheduler-url>
-```
-
-### Job stays queued
-
-There may be no available workers, or your job may be waiting behind other jobs.
-
-Check:
-
-```bash
-hpc-client jobs
-```
-
-### Logs are empty
-
-The job may not have started yet, or output may not have synced yet.
-
-Try:
-
-```bash
-hpc-client wait <job_id>
-hpc-client logs <job_id>
-```
-
-## Notes
-
-Students do not need access to the scheduler machine or scheduler source code.
-
-All interaction happens through the scheduler API using this client.
+Using the Python API allows entire experiment suites to be submitted and managed programmatically without manually creating and submitting individual `job.json` files.
