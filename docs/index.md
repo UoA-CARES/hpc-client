@@ -2,6 +2,8 @@
 
 The HPC Client is the command-line tool students and researchers use to submit Docker jobs to the CARES HPC Scheduler.
 
+![HPC System](images/hpc-system.png)
+
 ## Account Required
 
 You cannot create your own account through the client.

@@ -29,3 +29,7 @@ markdown_extensions:
   - pymdownx.highlight
   - pymdownx.inlinehilite
   - tables
+
+plugins:
+  - search
+  - glightbox

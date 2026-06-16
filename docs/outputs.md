@@ -163,7 +163,7 @@ output_dir = Path("/workspace/output")
 After a job completes, outputs are available from the shared HPC storage under:
 
 ```text
-/cares/hpc/outputs/<upi>/<job_id>
+/cares-nas/hpc/outputs/<upi>/<job_id>
 ```
 
 The scheduler preserves the directory structure created inside:
