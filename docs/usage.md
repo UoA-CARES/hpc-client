@@ -193,7 +193,7 @@ docker pull \
 ```
 
 !!! warning "Trust Docker Registry"
-    See [Docker Registry Configuration](docker.md#docker-registry-configuration) for instructions on how to add the HPC Docker registry to your trusted registry list.
+    See [Docker Registry Configuration](docker.md) for instructions on how to add the HPC Docker registry to your trusted registry list.
 
     This only needs to be configured once per machine.
 
