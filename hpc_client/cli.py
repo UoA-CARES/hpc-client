@@ -120,6 +120,23 @@ def command_wait(args: argparse.Namespace) -> None:
     print_json(data)
 
 
+def command_status(args: argparse.Namespace) -> None:
+    client = HPCClient.from_config()
+
+    data = client.cluster()
+
+    print()
+    print("Cluster Status")
+    print("==============")
+    print()
+
+    print(f"Queued Jobs:    {data['queued_jobs']}")
+    print(f"Running Jobs:   {data['running_jobs']}")
+    print()
+    print(f"Workers Busy:   {data['busy_workers']} / {data['total_workers']}")
+    print(f"Workers Idle:   {data['idle_workers']}")
+
+
 def _short_time(value: Any) -> str:
     if not value:
         return "-"
@@ -242,6 +259,9 @@ def build_parser() -> argparse.ArgumentParser:
     wait.add_argument("job_id")
     wait.add_argument("--poll-seconds", type=float, default=10.0)
     wait.set_defaults(func=command_wait)
+
+    status = subparsers.add_parser("status")
+    status.set_defaults(func=command_status)
 
     return parser
 

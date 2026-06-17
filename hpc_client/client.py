@@ -137,6 +137,9 @@ class HPCClient:
     def cancel(self, job_id: str) -> dict[str, Any]:
         return self._request("POST", f"/jobs/{job_id}/cancel")
 
+    def cluster(self) -> dict[str, Any]:
+        return self._request("GET", "/cluster")
+
     def wait(
         self,
         job_id: str,
