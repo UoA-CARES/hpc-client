@@ -120,6 +120,29 @@ def command_wait(args: argparse.Namespace) -> None:
     print_json(data)
 
 
+def _short_time(value: Any) -> str:
+    if not value:
+        return "-"
+
+    text = str(value)
+
+    # Handles ISO-style timestamps like:
+    # 2026-06-17T01:23:45+12:00
+    text = text.replace("T", " ")
+
+    if len(text) >= 16:
+        return text[:16]
+
+    return text
+
+
+def _blank(value: Any) -> str:
+    if value is None or value == "":
+        return "-"
+
+    return str(value)
+
+
 def print_jobs_table(jobs: list[dict[str, Any]]) -> None:
     rows = []
 
@@ -129,9 +152,12 @@ def print_jobs_table(jobs: list[dict[str, Any]]) -> None:
                 "Job ID": item.get("job_id", ""),
                 "Name": item.get("job_name", ""),
                 "Status": item.get("status", ""),
-                "Tier": item.get("tier_name", ""),
-                "Worker": item.get("assigned_worker_id", ""),
-                "Submitted": item.get("submitted_at", ""),
+                "Worker": _blank(item.get("assigned_worker_id")),
+                "Submitted": _short_time(item.get("submitted_at")),
+                "Started": _short_time(item.get("started_at")),
+                "Finished": _short_time(item.get("finished_at")),
+                "Runtime": _blank(item.get("runtime")),
+                "Limit": _blank(item.get("requested_runtime")),
             }
         )
 
@@ -139,7 +165,17 @@ def print_jobs_table(jobs: list[dict[str, Any]]) -> None:
         print("No jobs.")
         return
 
-    columns = ["Job ID", "Name", "Status", "Tier", "Worker", "Submitted"]
+    columns = [
+        "Job ID",
+        "Name",
+        "Status",
+        "Worker",
+        "Submitted",
+        "Started",
+        "Finished",
+        "Runtime",
+        "Limit",
+    ]
 
     widths = {
         column: max(
