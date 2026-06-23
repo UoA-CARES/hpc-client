@@ -12,12 +12,13 @@ theme:
 
 nav:
   - CARES HPC Scheduler:
-      - Introduction: index.md
+      - HPC Scheduler: index.md
       - Docker Images: docker.md
       - Datasets: datasets.md
       - Outputs: outputs.md
+      - Best Practices: best-practices.md
   - HPC-Client: 
-      - Overview: hpc-client/index.md
+      - HPC-Client: hpc-client/index.md
       - Installation: hpc-client/installation.md
       - Python API: hpc-client/python_api.md
 
