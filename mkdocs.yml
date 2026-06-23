@@ -4,21 +4,23 @@ site_description: Student and researcher guide for submitting jobs to the HPC Sc
 theme:
   name: material
   features:
-    - navigation.sections
     - navigation.expand
     - navigation.top
     - search.highlight
     - content.code.copy
+    - navigation.indexes
 
 nav:
-  - Home: index.md
-  - Installation: installation.md
-  - Usage: usage.md
-  - Jobs: jobs.md
-  - Docker Images: docker.md
-  - Datasets: datasets.md
-  - Outputs: outputs.md
-  - Python API: python_api.md
+  - CARES HPC Scheduler:
+      - Introduction: index.md
+      - Docker Images: docker.md
+      - Datasets: datasets.md
+      - Outputs: outputs.md
+  - HPC-Client: 
+      - Overview: hpc-client/index.md
+      - Installation: hpc-client/installation.md
+      - Python API: hpc-client/python_api.md
+
 
 markdown_extensions:
   - admonition

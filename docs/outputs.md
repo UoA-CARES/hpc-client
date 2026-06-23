@@ -162,8 +162,6 @@ output_dir = Path("/workspace/output")
 
 Job outputs are stored on the CARES NAS and can be accessed directly from your computer.
 
-Mounting the NAS locally is often more convenient than downloading files through a web browser, especially for large datasets, model checkpoints, videos, and experiment results.
-
 After a job completes, outputs are available from the shared HPC storage under:
 
 ```text
@@ -196,7 +194,13 @@ will appear in the final job outputs exactly as written.
 
 ---
 
+### Downloading Outputs (UI)
+
+To download outputs, navigate to the `outputs/<upi>` folder at: [http://130.216.238.2:5000](http://130.216.238.2:5000). Click on the relevant job folder to download the outputs as a zip file.
+
 ### Mounting the Output Directory (Linux)
+
+Mounting the NAS locally is often more convenient than downloading files through a web browser, especially for large datasets, model checkpoints, videos, and experiment results.
 
 Create a local mount point:
 
@@ -226,7 +230,7 @@ You will be prompted for your NAS password.
 
 ---
 
-### Accessing Your Outputs
+#### Accessing Your Outputs
 
 After mounting:
 
@@ -252,7 +256,7 @@ Example:
 
 ---
 
-### Copying Results
+#### Copying Results
 
 Copy a job locally:
 
@@ -272,7 +276,7 @@ cp \
 
 ---
 
-### Unmounting
+#### Unmounting
 
 When finished:
 
@@ -282,7 +286,7 @@ sudo umount ~/hpc_outputs
 
 ---
 
-### Using rsync
+#### Using rsync
 
 For large results it is often more efficient to use `rsync`.
 
@@ -345,16 +349,6 @@ torch.save(
 
 creates a saved output file.
 
-### Viewing Logs
-
-Logs can be viewed using:
-
-```bash
-hpc-client logs <job_id>
-```
-
-Use logs to monitor progress while a job is running.
-
 ### Large Outputs
 
 Large outputs are supported, however users should:
@@ -409,23 +403,3 @@ Large outputs are supported, however users should:
 
     to make outputs easier to browse and analyse.
 
-## Recommended Workflow
-
-```python
-from pathlib import Path
-
-output_dir = Path("/workspace/output")
-
-(output_dir / "checkpoints").mkdir(parents=True, exist_ok=True)
-(output_dir / "models").mkdir(parents=True, exist_ok=True)
-(output_dir / "results").mkdir(parents=True, exist_ok=True)
-(output_dir / "figures").mkdir(parents=True, exist_ok=True)
-```
-
-Keep all final artefacts inside:
-
-```text
-/workspace/output
-```
-
-to ensure they are preserved after the job completes.

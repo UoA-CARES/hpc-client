@@ -16,7 +16,7 @@ This is useful for:
 
     Follow the installation instructions in [Installation](installation.md) to get started.
 
-## Basic Example
+## Basic Examples
 
 Below is a minimal example of submitting a job from Python.
 
@@ -64,60 +64,7 @@ print(f"Submitted job: {job_id}")
     python submit_jobs.py
     ```
 
-## Submit a Job With a Command Override
-
-If the Docker image contains your code, the command can be overridden at submission time.
-
-```python
-job_id = client.submit_job(
-    {
-        "job_name": "train_seed_1",
-        "image": "130.216.238.2:5500/my-training-image:latest",
-        "max_runtime_hours": 4.0,
-        "command": "python train.py --seed 1",
-        "required_datasets": ["project_xyz"],
-        "required_worker_ids": [],
-    }
-)
-
-print(job_id)
-```
-
-## Submit Multiple Jobs
-
-A common pattern is to submit one job per seed.
-
-```python
-from hpc_client import HPCClient
-
-client = HPCClient(
-    scheduler_url="http://<scheduler-host>:8080",
-)
-
-client.login(
-    username="<username>",
-    password="<password>",
-)
-
-job_ids = []
-
-for seed in range(5):
-    job_id = client.submit_job(
-        {
-            "job_name": f"ppo_seed_{seed}",
-            "image": "130.216.238.2:5500/ppo-training:latest",
-            "max_runtime_hours": 12.0,
-            "command": f"python train.py --seed {seed}",
-            "required_datasets": ["project_xyz"],
-            "required_worker_ids": [],
-        }
-    )
-
-    job_ids.append(job_id)
-    print(f"Submitted seed {seed}: {job_id}")
-```
-
-## List Jobs
+### List Jobs
 
 ```python
 jobs = client.list_jobs()
@@ -126,7 +73,7 @@ for job in jobs:
     print(job["job_id"], job["status"])
 ```
 
-## Wait for a Job
+### Wait for a Job
 
 ```python
 client.wait_for_job(job_id)
@@ -140,7 +87,7 @@ for job_id in job_ids:
     print(f"Finished: {job_id}")
 ```
 
-## Read Logs
+### Read Logs
 
 ```python
 logs = client.get_logs(job_id)
@@ -148,13 +95,51 @@ logs = client.get_logs(job_id)
 print(logs)
 ```
 
-## Cancel a Job
+### Cancel a Job
 
 ```python
 client.cancel_job(job_id)
 ```
 
-## Example: Small Parameter Sweep
+## Advanced Examples
+These examples demonstrate more complex use cases and best practices for using the Python API to manage HPC jobs.
+
+### Submit and Wait
+
+Example of submitting a job and waiting for it to finish before reading logs.
+
+```python
+from hpc_client import HPCClient
+
+client = HPCClient(
+    scheduler_url="http://<scheduler-host>:8080",
+)
+
+client.login(
+    username="<username>",
+    password="<password>",
+)
+
+job_id = client.submit_job(
+    {
+        "job_name": "single_training_run",
+        "image": "130.216.238.2:5500/my-training-image:latest",
+        "max_runtime_hours": 4.0,
+        "command": "python train.py",
+        "required_datasets": ["project_xyz"],
+        "required_worker_ids": [],
+    }
+)
+
+print(f"Submitted: {job_id}")
+
+client.wait_for_job(job_id)
+
+logs = client.get_logs(job_id)
+print(logs)
+```
+
+### Small Parameter Sweep
 
 Example of submitting a small hyperparameter sweep with 3 learning rates and 3 seeds each (9 total jobs).
 
@@ -200,42 +185,12 @@ for learning_rate in learning_rates:
         print(f"Submitted {job_name}: {job_id}")
 ```
 
-## Example: Submit and Wait
+!!! warning "Maximum Job Limit"
+    Each user can have a maximum of 50 jobs in the queue to prevent spam.
 
-Example of submitting a job and waiting for it to finish before reading logs.
+    If you submit more than 50 jobs, they will be rejected until some of your existing jobs complete or are cancelled.
 
-```python
-from hpc_client import HPCClient
-
-client = HPCClient(
-    scheduler_url="http://<scheduler-host>:8080",
-)
-
-client.login(
-    username="<username>",
-    password="<password>",
-)
-
-job_id = client.submit_job(
-    {
-        "job_name": "single_training_run",
-        "image": "130.216.238.2:5500/my-training-image:latest",
-        "max_runtime_hours": 4.0,
-        "command": "python train.py",
-        "required_datasets": ["project_xyz"],
-        "required_worker_ids": [],
-    }
-)
-
-print(f"Submitted: {job_id}")
-
-client.wait_for_job(job_id)
-
-logs = client.get_logs(job_id)
-print(logs)
-```
-
-## Handling Active Job Limits
+### Handling Active Job Limits
 
 Each user has a maximum number of active jobs.
 
@@ -247,9 +202,9 @@ Active jobs include:
 - jobs being deleted
 - jobs being preempted
 
-If you submit too many jobs at once, the scheduler may reject new submissions.
+If you submit too many jobs, the scheduler will reject new submissions.
 
-For large sweeps, submit in batches.
+For large sweeps, submit in batches to avoid hitting the limit.
 
 Example:
 
@@ -269,52 +224,5 @@ for start in range(0, len(configs), batch_size):
         client.wait_for_job(job_id)
 ```
 
-## Best Practices
 
-### Submit Meaningful Job Names
-
-Use names that identify the experiment.
-
-Good:
-
-```text
-ppo_seed_1
-resnet_lr_1e3_seed_2
-dataset_ablation_seed_0
-```
-
-Poor:
-
-```text
-test
-job
-run
-new
-```
-
-### Use Command Overrides for Sweeps
-
-Build one Docker image and vary parameters using:
-
-```json
-"command": "python train.py --seed 1"
-```
-
-This avoids rebuilding the image for every experiment.
-
-### Save Outputs by Job
-
-Each job should save results to:
-
-```text
-/workspace/output
-```
-
-The scheduler stores outputs separately for each job.
-
-### Avoid Submitting Thousands of Jobs at Once
-
-Submit large sweeps in batches.
-
-This keeps the queue manageable and avoids hitting your active job limit.
 

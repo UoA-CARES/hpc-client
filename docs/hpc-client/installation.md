@@ -72,7 +72,7 @@ Scheduler URL: http://<SCHEDULER_IP>:8080
 
 !!! tip "Scheduler URL"
 
-    The scheduler IP is provided by the HPC administrators.
+    The scheduler IP is provided by the HPC administrators: contact them if you don't have this information [cares-hpc-support](https://caresuoa.slack.com/archives/C0B0AJKMCPM).  
 
 ## Login
 
@@ -145,12 +145,3 @@ hpc-client logout
 ```
 
 You will need to login again before submitting jobs.
-
-## Next Steps
-
-Continue with:
-
-- Docker Images
-- Jobs
-- Datasets
-- Outputs
