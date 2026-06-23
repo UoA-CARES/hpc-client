@@ -55,9 +55,8 @@ Each user role has a default allocation that determines how many jobs can run in
 
 | User Role     | Normal Jobs | Overflow Jobs | Opportunistic Jobs |
 | ------------- | ----------- | ------------- | ------------------ |
-| Undergraduate | 3           | 0             | Unlimited*         |
-| Postgraduate  | 5           | 2             | Unlimited*         |
-| Staff         | 5           | 2             | Unlimited*         |
+| Undergraduate | 3           | 0             | Unlimited          |
+| Postgraduate  | 5           | 2             | Unlimited          |
+| Staff         | 5           | 2             | Unlimited          |
 | Administrator | Unlimited   | Unlimited     | Unlimited          |
 
-* Opportunistic jobs are run when a user is beyond the Normal and Overflow limits but will only run when spare cluster capacity is available and all higher-priority work has been allocated.
