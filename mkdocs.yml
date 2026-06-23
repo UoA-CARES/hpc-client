@@ -17,6 +17,7 @@ nav:
       - Datasets: datasets.md
       - Outputs: outputs.md
       - Best Practices: best-practices.md
+      - Scheduling: scheduling.md
   - HPC-Client: 
       - HPC-Client: hpc-client/index.md
       - Installation: hpc-client/installation.md
