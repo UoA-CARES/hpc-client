@@ -30,7 +30,7 @@ Opportunistic jobs are used when a user has already consumed both their Normal a
 
 These jobs will only run when there are no Normal or Overflow jobs waiting and there is spare capacity on the cluster. This allows users to make use of idle resources while ensuring that higher-priority work is not delayed.
 
-!!! warning "Opportunistic jobs may be cancelled"
+!!! warning "Opportunistic jobs may be preempted"
     Opportunistic jobs may be `preempted` if a higher-priority job is submitted while they are running and no other workers are available. This means that if you have an opportunistic job running and someone submits a normal or overflow job, the opportunistic job will be stopped and moved back to the queue until resources become available again.
 
 ## Blocked
