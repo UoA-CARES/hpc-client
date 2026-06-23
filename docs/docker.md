@@ -120,6 +120,18 @@ Users are not able to:
 
 Instead, the image should already contain everything required to perform the task.
 
+!!! warning "Do Not Compile Datasets into Docker Images"
+
+    Datasets should **NOT** be included in Docker images.
+
+    Instead, upload datasets to the CARES NAS and request them in the job submission.
+
+    Requested datasets are mounted read-only inside the container at:
+
+    ```text
+    /workspace/datasets/<dataset_name>
+    ```
+
 ### A Good HPC Docker Image
 
 A good HPC image:
@@ -194,6 +206,18 @@ A good image contains:
 
 Everything required to execute the workload should already be present in the image.
 
+!!! warning "Do Not Compile Datasets into Docker Images"
+
+    Datasets should **NOT** be included in Docker images.
+
+    Instead, upload datasets to the CARES NAS and request them in the job submission.
+
+    Requested datasets are mounted read-only inside the container at:
+
+    ```text
+    /workspace/datasets/<dataset_name>
+    ```
+
 ### Use Environment Variables and Arguments
 
 Avoid hard-coding experiment settings.
@@ -219,6 +243,20 @@ Then override parameters using the job command:
 
 This allows a single image to be reused for many experiments.
 
+!!! info "Data Paths Should Be Configurable"
+
+    Do not hard-code dataset paths.
+
+    Use environment variables or command-line arguments to specify where data is saved and stored. 
+
+    Configure all output paths to point to:
+
+    ```text
+    /workspace/output
+    ```
+
+    inside of the Docker container.    
+
 ### Save Outputs Explicitly
 
 Anything you want to keep must be written to:
@@ -243,6 +281,18 @@ output_dir.mkdir(parents=True, exist_ok=True)
 
 Files written elsewhere may be lost when the container exits.
 
+!!! info "Outputs Are Saved Automatically"
+
+    Anything written to:
+
+    ```text
+    /workspace/output
+    ```
+
+    is automatically saved by the scheduler and copied back to the HPC storage when the job finishes.
+
+    Anything else inside the container is temporary and will be lost when the container exits.
+
 ### Use Mounted Datasets
 
 Datasets requested in:
@@ -266,6 +316,18 @@ from pathlib import Path
 
 dataset_root = Path("/workspace/datasets/project_xyz")
 ```
+
+!!! info "Datasets Should Not Be Included in Docker Images"
+
+    Datasets should not be included in Docker images.
+
+    Instead, upload datasets to the CARES NAS and request them in `job.json`.
+
+    Requested datasets are mounted read-only inside the container at:
+
+    ```text
+    /workspace/datasets/<dataset_name>
+    ```
 
 ### Test Locally First
 
