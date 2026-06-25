@@ -11,6 +11,16 @@ Your Docker image contains:
 
 The scheduler launches your image on an available worker and captures the outputs.
 
+!!! note "Full Docker Documentation"
+    This guide provides a brief overview of Docker and how it is used in the HPC Scheduler. For more detailed information, please refer to the [official Docker documentation](https://docs.docker.com/get-started/).
+
+!!! warning "Docker is Required"
+    All jobs submitted to the HPC Scheduler must run inside a Docker container.
+
+    You cannot run arbitrary commands on the worker machines itself.
+
+    If you want to run a script, it must be included in the image and specified as the entry point.
+
 ## Important Concepts
 
 !!! info "Code Must Be in the Docker Image"
@@ -331,12 +341,7 @@ dataset_root = Path("/workspace/datasets/project_xyz")
 
 ### Test Locally First
 
-Before pushing an image and submitting a job:
-
-```bash
-docker build -t my-image .
-docker run --rm my-image
-```
+Before pushing an image and submitting a job build and run the image locally to ensure it works as expected.
 
 The container should:
 
@@ -346,6 +351,14 @@ The container should:
 4. Exit cleanly
 
 If it does not work locally, it will not work on the HPC cluster - frequent failures will lead to temporary account suspensions.
+
+!!! note "Docker Build Commands"
+    The specific Docker build commands will depend on your project and the dependencies required to run your code.
+
+    ```bash
+    docker build -t my-image .
+    docker run --rm my-image
+    ```
 
 ### Recommended Mindset
 
