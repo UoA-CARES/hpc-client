@@ -714,8 +714,10 @@ sudo systemctl restart docker
 Verify:
 
 ```bash
-docker pull 130.216.238.2:5500/test-image:latest
+curl -X GET 130.216.238.2:5500/v2/_catalog
 ```
+
+The above command should return a list of images in the registry.
 
 **Docker Desktop**
 
@@ -743,7 +745,7 @@ Apply and restart Docker.
 The following command should no longer produce certificate or trust errors:
 
 ```bash
-docker pull 130.216.238.2:5500/count-to-60:latest
+docker pull 130.216.238.2:5500/hpc-test:latest
 ```
 
 !!! warning "One-Time Configuration"
