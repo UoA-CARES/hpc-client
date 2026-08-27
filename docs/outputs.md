@@ -158,6 +158,100 @@ output_dir = Path("/workspace/output")
 
     If you want to save files into subdirectories, your code needs to create those directories first.
 
+## Resumable Jobs and Checkpoints
+
+Long-running jobs can optionally be submitted as resumable:
+
+```json
+"resumable": true
+```
+
+This is useful for workloads such as machine-learning training that periodically save checkpoints.
+
+If a worker or machine is unexpectedly interrupted, a resumable job may be restarted on the same worker. The existing contents of:
+
+```text
+/workspace/output
+```
+
+are preserved and mounted into the restarted container.
+
+The scheduler then runs the original job command again.
+
+The scheduler does not automatically load your checkpoint. Your application must check whether a checkpoint already exists and resume from it.
+
+For example:
+
+```python
+from pathlib import Path
+
+output_dir = Path("/workspace/output")
+checkpoint_dir = output_dir / "checkpoints"
+checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+checkpoint_path = checkpoint_dir / "latest.pt"
+
+if checkpoint_path.exists():
+    print(f"Resuming from: {checkpoint_path}")
+    # Load your model, optimiser, training step, etc.
+else:
+    print("Starting a new training run")
+```
+
+Your training loop should then periodically update the checkpoint:
+
+```python
+# Example only - save whatever state your framework requires.
+torch.save(
+    {
+        "model": model.state_dict(),
+        "optimizer": optimizer.state_dict(),
+        "step": step,
+    },
+    checkpoint_path,
+)
+```
+
+!!! warning "Save Checkpoints Under /workspace/output"
+
+    Recovery only preserves files stored under:
+
+    ```text
+    /workspace/output
+    ```
+
+    A checkpoint saved somewhere such as:
+
+    ```text
+    /app/checkpoint.pt
+    /tmp/checkpoint.pt
+    /home/user/checkpoint.pt
+    ```
+
+    is inside the temporary container filesystem and will not be available after the container is restarted.
+
+!!! warning "Checkpoint Frequently Enough"
+
+    A resumable job can only recover from the most recently saved state.
+
+    For example, if a checkpoint is written every 30 minutes and the worker fails 29 minutes after the previous checkpoint, approximately 29 minutes of work may need to be repeated.
+
+    Choose a checkpoint frequency appropriate for the cost of your workload.
+
+!!! note "The Original Command Is Run Again"
+
+    Recovery starts a new Docker container and executes the same job command again.
+
+    Your program should therefore be safe to start when output files from an earlier attempt already exist.
+
+!!! note "Recovery Is Not Exactly-Once Execution"
+
+    A worker may fail after some work has completed but before the scheduler knows that the job finished.
+
+    A resumable job may therefore execute some work more than once.
+
+    Applications should rely on checkpoints and saved progress rather than assuming every training step or operation will execute exactly once.
+
 ## Accessing Job Outputs from the NAS
 
 Job outputs are stored on the CARES NAS and can be accessed directly from your computer.

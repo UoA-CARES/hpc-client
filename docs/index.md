@@ -445,6 +445,57 @@ Example:
 
     For now, all jobs are automatically assigned to workers by the scheduler and users should avoid specify required worker IDs as it will limit the jobs ability to be scheduled.
 
+##### resumable
+
+Optional. Defaults to `false`.
+
+```json
+"resumable": true
+```
+
+Resumable jobs can recover from an unexpected worker or machine restart.
+
+If a worker is interrupted while running a resumable job, the scheduler may restart the same job on the same worker. Files previously written to:
+
+```text
+/workspace/output
+```
+
+are preserved and made available to the restarted container.
+
+Your application is responsible for detecting and loading any existing checkpoint or saved state. The scheduler does not understand checkpoint formats and simply reruns the original job command.
+
+For example, a long-running training job might periodically save:
+
+```text
+/workspace/output/checkpoints/latest.pt
+```
+
+and check for that file when starting.
+
+!!! warning "Your Code Must Support Resuming"
+
+    Setting:
+
+    ```json
+    "resumable": true
+    ```
+
+    does not automatically resume your application.
+
+    Your code must:
+
+    - periodically save useful state or checkpoints
+    - save them under `/workspace/output`
+    - check for an existing checkpoint when starting
+    - restore the checkpoint before continuing
+
+!!! note "Recovery Scope"
+
+    Resumable recovery is intended for unexpected worker or machine interruptions.
+
+    It does not currently resume a job after normal cancellation, timeout, failure, or opportunistic preemption.
+
 #### Submit the Job
 There are three ways to submit jobs:
 
@@ -466,6 +517,7 @@ Create `job.json`:
   "job_name": "count_to_60",
   "image": "130.216.238.2:5500/count-to-60:latest",
   "max_runtime_hours": 1.0,
+  "resumable": false,
   "command": null,
   "required_datasets": [],
   "required_worker_ids": []
@@ -495,9 +547,7 @@ Example:
 ```python
 from hpc_client import HPCClient
 
-client = HPCClient(
-    scheduler_url="http://scheduler.example.nz:8080"
-)
+client = HPCClient(scheduler_url="http://scheduler.example.nz:8080")
 
 client.login(
     username="abc123",
