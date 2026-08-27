@@ -35,19 +35,47 @@ Example:
 
 Jobs exceeding their runtime limit are automatically terminated.
 
-### Save Outputs Frequently
+### Save Outputs and Checkpoints Frequently
 
 Long-running jobs should periodically save:
 
 - checkpoints
 - models
 - metrics
+- other important progress
 
 to:
 
 ```text
 /workspace/output
 ```
+
+For workloads that support checkpoint recovery, consider submitting the job with:
+
+```json
+"resumable": true
+```
+
+A resumable job may be restarted after an unexpected worker or machine interruption with its existing `/workspace/output` directory preserved.
+
+Your code must still detect and reload its own checkpoint when it starts.
+
+A good pattern is:
+
+```python
+from pathlib import Path
+
+checkpoint = Path("/workspace/output/checkpoints/latest.pt")
+
+if checkpoint.exists():
+    # restore previous state
+    ...
+else:
+    # start from scratch
+    ...
+```
+
+Save checkpoints frequently enough that restarting the job does not lose a large amount of computation.
 
 ### Organise Outputs
 

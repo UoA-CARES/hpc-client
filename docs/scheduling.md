@@ -26,12 +26,20 @@ Overflow jobs allow users to temporarily exceed their normal allocation when spa
 
 ## Opportunistic
 
-Opportunistic jobs are used when a user has already consumed both their Normal and Overflow allocations. These jobs only run when cluster resources would otherwise be idle. Opportunistic jobs have the lowest scheduling priority and may wait longer before being assigned to a worker. This tier allows users to continue submitting work without preventing higher-priority jobs from running. 
+Opportunistic jobs are used when a user has already consumed both their Normal and Overflow allocations. These jobs only run when cluster resources would otherwise be idle and the job will run for less than 24 hours. Opportunistic jobs have the lowest scheduling priority and may wait longer before being assigned to a worker. This tier allows users to continue submitting work without preventing higher-priority jobs from running. 
 
 These jobs will only run when there are no Normal or Overflow jobs waiting and there is spare capacity on the cluster. This allows users to make use of idle resources while ensuring that higher-priority work is not delayed.
 
 !!! warning "Opportunistic jobs may be preempted"
     Opportunistic jobs may be `preempted` if a higher-priority job is submitted while they are running and no other workers are available. This means that if you have an opportunistic job running and someone submits a normal or overflow job, the opportunistic job will be stopped and moved back to the queue until resources become available again.
+
+!!! note "Resumable Jobs and Preemption"
+
+    The `resumable` option is intended for unexpected worker or machine interruptions.
+
+    Opportunistic preemption is a normal scheduler-controlled stop and currently does not use the same local recovery mechanism.
+
+    A preempted job should therefore not rely on `resumable: true` to continue from its local checkpoint when it is scheduled again.
 
 ## Blocked
 

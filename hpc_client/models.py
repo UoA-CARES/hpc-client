@@ -10,6 +10,8 @@ class JobSpec(BaseModel):
 
     max_runtime_hours: float = 1.0
 
+    resumable: bool = False
+
     required_datasets: list[str] = Field(default_factory=list)
     required_worker_ids: list[str] = Field(default_factory=list)
 
