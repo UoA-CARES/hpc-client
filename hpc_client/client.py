@@ -13,7 +13,7 @@ TERMINAL_STATUSES = {
     "completed",
     "failed",
     "cancelled",
-    "deleted",
+    "timeout",
 }
 
 

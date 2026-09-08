@@ -71,11 +71,26 @@ Create `job.json`:
   "job_name": "count_to_60",
   "image": "130.216.238.2:5500/count-to-60:latest",
   "max_runtime_hours": 1.0,
+  "resumable": false,
   "command": null,
   "required_datasets": [],
   "required_worker_ids": []
 }
 ```
+
+!!! note "Resumable Jobs"
+
+    Set:
+
+    ```json
+    "resumable": true
+    ```
+
+    for checkpoint-aware jobs that should support recovery after worker interruptions or scheduler-controlled opportunistic preemption.
+
+    Resumable applications must save and reload their checkpoint state from `/workspace/output`.
+
+    See [Job Priorities and Scheduling Tiers](../scheduling.md) and [Outputs](../outputs.md) for details.
 
 Submit:
 
@@ -124,9 +139,7 @@ Example:
 ```python
 from hpc_client import HPCClient
 
-client = HPCClient(
-    scheduler_url="http://scheduler.example.nz:8080"
-)
+client = HPCClient(scheduler_url="http://scheduler.example.nz:8080")
 
 client.login(
     username="abc123",
@@ -138,6 +151,7 @@ job_id = client.submit_job(
         "job_name": "experiment_001",
         "image": "130.216.238.2:5500/my-project:latest",
         "max_runtime_hours": 4.0,
+        "resumable": False,
         "command": "python train.py --seed 1",
         "required_datasets": ["project_xyz"],
         "required_worker_ids": [],
