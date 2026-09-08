@@ -168,17 +168,20 @@ Long-running jobs can optionally be submitted as resumable:
 
 This is useful for workloads such as machine-learning training that periodically save checkpoints.
 
-If a worker or machine is unexpectedly interrupted, a resumable job may be restarted on the same worker. The existing contents of:
+A resumable job may need to restart after:
+
+- an unexpected worker or machine interruption
+- scheduler-controlled opportunistic preemption
+
+The directory:
 
 ```text
 /workspace/output
 ```
 
-are preserved and mounted into the restarted container.
+is also the persistent workspace used for resumable job state.
 
-The scheduler then runs the original job command again.
-
-The scheduler does not automatically load your checkpoint. Your application must check whether a checkpoint already exists and resume from it.
+Your application should therefore save any state required to continue execution somewhere under this directory.
 
 For example:
 
@@ -198,7 +201,7 @@ else:
     print("Starting a new training run")
 ```
 
-Your training loop should then periodically update the checkpoint:
+Your training loop should periodically update the checkpoint:
 
 ```python
 # Example only - save whatever state your framework requires.
@@ -212,9 +215,57 @@ torch.save(
 )
 ```
 
+### Recovery After a Worker Interruption
+
+If a worker or machine unexpectedly restarts, surviving local job files may be reused when a resumable job is restarted on that worker.
+
+The scheduler runs the original Docker command again and the application can detect the existing checkpoint under:
+
+```text
+/workspace/output
+```
+
+### Recovery After Opportunistic Preemption
+
+Long resumable jobs may also be preempted when they are using Opportunistic capacity and higher-priority work requires the worker.
+
+For a scheduler-controlled resumable preemption:
+
+```text
+Running Job
+    ↓
+Container Stopped
+    ↓
+/workspace/output Persisted to NAS
+    ↓
+Job Returned to Queue
+    ↓
+Job Scheduled Again
+    ↓
+Saved Output Restored
+    ↓
+Container Starts Again
+    ↓
+Application Loads Checkpoint
+```
+
+The resumed job does not need to return to the same worker.
+
+If no local job state exists on the new worker, the scheduler restores the previously persisted output state from the NAS before starting the container.
+
+Your application then sees the restored files under the same path:
+
+```text
+/workspace/output
+```
+
+and is responsible for loading the appropriate checkpoint.
+
+See [Job Priorities and Scheduling Tiers](scheduling.md) for the rules governing when Opportunistic jobs may be preempted.
+
 !!! warning "Save Checkpoints Under /workspace/output"
 
-    Recovery only preserves files stored under:
+    Recovery only preserves resumable state stored under:
 
     ```text
     /workspace/output
@@ -228,29 +279,37 @@ torch.save(
     /home/user/checkpoint.pt
     ```
 
-    is inside the temporary container filesystem and will not be available after the container is restarted.
+    is inside the temporary container filesystem and cannot be relied upon after the container is restarted.
 
 !!! warning "Checkpoint Frequently Enough"
 
-    A resumable job can only recover from the most recently saved state.
+    A resumable job can only continue from state that has actually been saved.
 
-    For example, if a checkpoint is written every 30 minutes and the worker fails 29 minutes after the previous checkpoint, approximately 29 minutes of work may need to be repeated.
+    For example, if a checkpoint is written every 30 minutes and the job is interrupted 29 minutes after the previous checkpoint, approximately 29 minutes of work may need to be repeated.
 
     Choose a checkpoint frequency appropriate for the cost of your workload.
 
 !!! note "The Original Command Is Run Again"
 
-    Recovery starts a new Docker container and executes the same job command again.
+    Recovery starts a new Docker container and executes the original job command again.
 
-    Your program should therefore be safe to start when output files from an earlier attempt already exist.
+    Your program should therefore be safe to start when output files from an earlier execution already exist.
 
 !!! note "Recovery Is Not Exactly-Once Execution"
 
-    A worker may fail after some work has completed but before the scheduler knows that the job finished.
+    A worker may fail or a job may be preempted after some work has completed but before a newer checkpoint has been written.
 
     A resumable job may therefore execute some work more than once.
 
     Applications should rely on checkpoints and saved progress rather than assuming every training step or operation will execute exactly once.
+
+!!! warning "Resumable Does Not Mean Automatic Application Recovery"
+
+    The scheduler preserves and restores the `/workspace/output` workspace.
+
+    It does not understand model checkpoints or application state.
+
+    Your application must detect and load its own saved state when it starts.
 
 ## Accessing Job Outputs from the NAS
 

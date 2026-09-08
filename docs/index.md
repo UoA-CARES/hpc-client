@@ -453,25 +453,44 @@ Optional. Defaults to `false`.
 "resumable": true
 ```
 
-Resumable jobs can recover from an unexpected worker or machine restart.
+Resumable jobs are designed for long-running workloads that periodically save checkpoints or other restart state.
 
-If a worker is interrupted while running a resumable job, the scheduler may restart the same job on the same worker. Files previously written to:
+A resumable job can recover after:
+
+- an unexpected worker or machine interruption
+- scheduler-controlled opportunistic preemption
+
+Your application must save the state required to continue into:
 
 ```text
 /workspace/output
 ```
 
-are preserved and made available to the restarted container.
+When a resumable job starts again, previously saved output state may already be present in `/workspace/output`.
 
-Your application is responsible for detecting and loading any existing checkpoint or saved state. The scheduler does not understand checkpoint formats and simply reruns the original job command.
-
-For example, a long-running training job might periodically save:
+For example, a training job might periodically save:
 
 ```text
 /workspace/output/checkpoints/latest.pt
 ```
 
-and check for that file when starting.
+and check for that file whenever the container starts.
+
+```python
+from pathlib import Path
+
+checkpoint = Path("/workspace/output/checkpoints/latest.pt")
+
+if checkpoint.exists():
+    print(f"Resuming from {checkpoint}")
+    # Load model, optimiser, training step, etc.
+else:
+    print("Starting from scratch")
+```
+
+If a worker or machine unexpectedly restarts, surviving local job state may be reused when the job is restarted.
+
+For scheduler-controlled preemption, resumable output state is persisted to the NAS before the job is returned to the queue. When the job is later scheduled again, that saved state can be restored onto the worker before the container starts. The resumed job may therefore run on a different worker.
 
 !!! warning "Your Code Must Support Resuming"
 
@@ -490,11 +509,23 @@ and check for that file when starting.
     - check for an existing checkpoint when starting
     - restore the checkpoint before continuing
 
+    The scheduler preserves and restores files. It does not understand your application's checkpoint format.
+
+!!! note "Resumable Jobs and Opportunistic Scheduling"
+
+    Runtime and resumability affect how jobs outside your Normal and Overflow allocation are scheduled.
+
+    - Jobs requesting **24 hours or less** may run opportunistically and are protected from automatic preemption.
+    - Jobs requesting **more than 24 hours** must be resumable to run opportunistically.
+    - Long resumable opportunistic jobs are protected for the first **24 hours of each execution stint** and may then become preemptible.
+
+    See [Job Priorities and Scheduling Tiers](scheduling.md) for the full scheduling and preemption rules.
+
 !!! note "Recovery Scope"
 
-    Resumable recovery is intended for unexpected worker or machine interruptions.
+    Resumable recovery applies to unexpected worker or machine interruptions and scheduler-controlled opportunistic preemption.
 
-    It does not currently resume a job after normal cancellation, timeout, failure, or opportunistic preemption.
+    Normal cancellation, timeout, or application failure should not be treated as a checkpoint-resume mechanism.
 
 #### Submit the Job
 There are three ways to submit jobs:

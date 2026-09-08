@@ -303,6 +303,24 @@ Files written elsewhere may be lost when the container exits.
 
     Anything else inside the container is temporary and will be lost when the container exits.
 
+!!! tip "Make Long-Running Containers Restart-Safe"
+
+    If a job is submitted with:
+
+    ```json
+    "resumable": true
+    ```
+
+    the same Docker command may be started again with files from an earlier execution already present in:
+
+    ```text
+    /workspace/output
+    ```
+
+    Long-running applications should therefore check for an existing checkpoint when they start and continue from it when appropriate.
+
+    This supports both recovery from worker interruptions and resumable Opportunistic preemption.
+
 ### Use Mounted Datasets
 
 Datasets requested in:

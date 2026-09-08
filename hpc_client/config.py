@@ -16,7 +16,8 @@ class HPCConfig:
     def load(cls, path: pathlib.Path = CONFIG_PATH) -> "HPCConfig":
         if not path.exists():
             raise RuntimeError(
-                f"No HPC config found at {path}. Run: hpc configure --scheduler-url URL"
+                f"No HPC config found at {path}. "
+                "Run: hpc-client configure --scheduler-url URL"
             )
 
         data = json.loads(path.read_text(encoding="utf-8"))

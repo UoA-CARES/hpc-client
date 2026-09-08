@@ -37,6 +37,7 @@ job_id = client.submit_job(
         "job_name": "example_job",
         "image": "130.216.238.2:5500/example-image:latest",
         "max_runtime_hours": 1.0,
+        "resumable": False,
         "command": None,
         "required_datasets": [],
         "required_worker_ids": [],
@@ -63,6 +64,28 @@ print(f"Submitted job: {job_id}")
     export HPC_PASSWORD="<password>"
     python submit_jobs.py
     ```
+
+### Resumable Jobs
+
+Set:
+
+```python
+"resumable": True,
+```
+
+for checkpoint-aware jobs that should support recovery after worker interruptions or scheduler-controlled opportunistic preemption.
+
+Your application must save restart state under:
+
+```text
+/workspace/output
+```
+
+and load that state when the container starts again.
+
+For long jobs, resumability also affects scheduling: jobs requesting more than 24 hours must be resumable to use Opportunistic capacity outside their Normal and Overflow allocation.
+
+See [Job Priorities and Scheduling Tiers](../scheduling.md) and [Outputs](../outputs.md) for details.
 
 ### List Jobs
 
@@ -125,6 +148,7 @@ job_id = client.submit_job(
         "job_name": "single_training_run",
         "image": "130.216.238.2:5500/my-training-image:latest",
         "max_runtime_hours": 4.0,
+        "resumable": False,
         "command": "python train.py",
         "required_datasets": ["project_xyz"],
         "required_worker_ids": [],
@@ -164,17 +188,14 @@ for learning_rate in learning_rates:
     for seed in seeds:
         job_name = f"lr_{learning_rate}_seed_{seed}".replace(".", "p")
 
-        command = (
-            "python train.py "
-            f"--learning-rate {learning_rate} "
-            f"--seed {seed}"
-        )
+        command = f"python train.py --learning-rate {learning_rate} --seed {seed}"
 
         job_id = client.submit_job(
             {
                 "job_name": job_name,
                 "image": "130.216.238.2:5500/my-training-image:latest",
                 "max_runtime_hours": 8.0,
+                "resumable": False,
                 "command": command,
                 "required_datasets": ["project_xyz"],
                 "required_worker_ids": [],

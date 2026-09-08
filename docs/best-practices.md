@@ -35,6 +35,16 @@ Example:
 
 Jobs exceeding their runtime limit are automatically terminated.
 
+!!! note "Runtime Limits Affect Opportunistic Scheduling"
+
+    The requested runtime also affects how jobs can use spare cluster capacity.
+
+    Jobs requesting **24 hours or less** can run opportunistically without being automatically preempted.
+
+    Jobs requesting **more than 24 hours** must be submitted as resumable if they are to run outside your Normal and Overflow allocation. 
+
+    See [Job Priorities and Scheduling Tiers](scheduling.md) for the full scheduling rules.
+
 ### Save Outputs and Checkpoints Frequently
 
 Long-running jobs should periodically save:
@@ -42,7 +52,8 @@ Long-running jobs should periodically save:
 - checkpoints
 - models
 - metrics
-- other important progress
+- training progress
+- other important state
 
 to:
 
@@ -50,15 +61,21 @@ to:
 /workspace/output
 ```
 
-For workloads that support checkpoint recovery, consider submitting the job with:
+For workloads that can recover from checkpoints, submit the job with:
 
 ```json
 "resumable": true
 ```
 
-A resumable job may be restarted after an unexpected worker or machine interruption with its existing `/workspace/output` directory preserved.
+Resumable jobs can recover after unexpected worker or machine interruptions and can also safely participate in resumable Opportunistic scheduling.
 
-Your code must still detect and reload its own checkpoint when it starts.
+When a resumable job starts again, previously saved files may already exist under:
+
+```text
+/workspace/output
+```
+
+Your code must detect and reload its own checkpoint.
 
 A good pattern is:
 
@@ -68,14 +85,20 @@ from pathlib import Path
 checkpoint = Path("/workspace/output/checkpoints/latest.pt")
 
 if checkpoint.exists():
-    # restore previous state
+    # Restore model, optimiser, training step, etc.
     ...
 else:
-    # start from scratch
+    # Start from scratch.
     ...
 ```
 
-Save checkpoints frequently enough that restarting the job does not lose a large amount of computation.
+Save checkpoints frequently enough that an interruption or preemption does not cause a large amount of computation to be repeated.
+
+!!! important "Recommended for Long Jobs"
+
+    If a job may require more than 24 hours, making it resumable is strongly recommended.
+
+    Long non-resumable jobs outside your Normal and Overflow allocation are Held rather than being allowed to use Opportunistic capacity.
 
 ### Organise Outputs
 
